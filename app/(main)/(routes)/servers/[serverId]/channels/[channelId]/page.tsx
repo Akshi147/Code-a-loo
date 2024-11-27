@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 import { redirectToSignIn } from '@clerk/nextjs';
 import { ChannelType } from '@prisma/client';
 import { redirect } from 'next/navigation';
+
 interface ChannelIdPageProps {
   params: {
     serverId: string;
@@ -15,17 +16,20 @@ interface ChannelIdPageProps {
 }
 
 const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
+  // Ensure the user is authenticated
   const profile = await currentProfile();
   if (!profile) {
     return redirectToSignIn();
   }
 
+  // Fetch channel data
   const channel = await db.channel.findUnique({
     where: {
       id: params.channelId,
     },
   });
 
+  // Fetch member data to ensure the user is part of the server
   const member = await db.member.findFirst({
     where: {
       serverId: params.serverId,
@@ -33,6 +37,7 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
     },
   });
 
+  // If no channel or member found, redirect to homepage
   if (!channel || !member) {
     redirect('/');
   }
@@ -52,7 +57,7 @@ const ChannelIdPage = async ({ params }: ChannelIdPageProps) => {
             chatId={channel.id}
             type="channel"
             apiUrl="/api/messages"
-            socketUrl="/api/socket/messages"
+            socketUrl="/api/socket/messages"  // Socket URL here
             socketQuery={{
               channelId: channel.id,
               serverId: channel.serverId,
